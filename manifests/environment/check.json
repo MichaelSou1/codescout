@@ -1,0 +1,58 @@
+{
+  "checked_utc": "2026-10-06T20:02:43.948609+00:00",
+  "cmdline": [
+    "scripts/check_environment.py",
+    "--with-cuda",
+    "--output",
+    "manifests/environment/check.json"
+  ],
+  "cuda": {
+    "available": true,
+    "compiled_kernel_archs": [
+      "sm_75",
+      "sm_80",
+      "sm_86",
+      "sm_90",
+      "sm_100",
+      "sm_120"
+    ],
+    "device_0": {
+      "capability": "9.0",
+      "name": "NVIDIA H100 80GB HBM3",
+      "total_memory_gib": 79.2
+    },
+    "device_count": 8,
+    "driver_version": [
+      "595.58.03"
+    ],
+    "flash_attn_version": "2.8.3",
+    "torch_cuda_version": "13.0",
+    "torch_version": "2.11.0+cu130"
+  },
+  "packages": {
+    "cupy-cuda13x": "14.0.1",
+    "datasets": "5.0.0",
+    "flash-attn": "2.8.3",
+    "flash-linear-attention": "0.5.2",
+    "liger-kernel": "0.8.2",
+    "numpy": "2.4.6",
+    "pandas": "3.0.3",
+    "pyarrow": "24.0.0",
+    "ray": "2.55.1",
+    "tensordict": "0.10.0",
+    "torch": "2.11.0+cu130",
+    "torchaudio": "2.11.0+cu130",
+    "torchvision": "0.26.0+cu130",
+    "transformers": "5.9.0",
+    "trl": "0.27.0",
+    "verl": "0.9.1",
+    "vllm": "0.24.0",
+    "wandb": "0.27.2"
+  },
+  "path_boundary_issues": [],
+  "platform": "Linux-5.14.0-3.0.3.kwai.x86_64-x86_64-with-glibc2.39",
+  "python_executable": "/mmu_vlm_hdd/home/rhsu/playground/codescout-data/envs/verl-vllm/bin/python",
+  "python_version": "3.12.15",
+  "ray_tmpdir": "/mmu_vlm_hdd/home/rhsu/playground/codescout-data/tmp/ray",
+  "verdict": "PASS"
+}
