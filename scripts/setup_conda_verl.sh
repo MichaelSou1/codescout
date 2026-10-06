@@ -97,12 +97,14 @@ if [ "$SKIP_DEPS" -eq 0 ]; then
   step "从官方 uv.lock 导出 fsdp+vllm 锁定依赖"
   LOCK_EXPORT="$VERL_SRC/requirements-codescout-lock.txt"
   ( cd "$VERL_SRC" && uv export --frozen --no-dev --extra fsdp --extra vllm -o "$LOCK_EXPORT" )
-  step "安装锁定依赖到 prefix（uv pip，--no-project 防止解析本仓库 pyproject）"
-  ( cd "$TMPDIR" && uv pip install --python "$PY" --no-project -r "$LOCK_EXPORT" )
+  # 注意：uv pip 必须在无 pyproject 的目录运行（服务器 uv 不支持 --no-project），
+  # 否则会把当前目录 pyproject 隐式加入解析。
+  step "安装锁定依赖到 prefix（uv pip，cwd=$TMPDIR）"
+  ( cd "$TMPDIR" && uv pip install --python "$PY" -r "$LOCK_EXPORT" )
   step "安装 verl 本体（editable，不加依赖）"
-  ( cd "$TMPDIR" && uv pip install --python "$PY" --no-project --no-deps -e "$VERL_SRC" )
+  ( cd "$TMPDIR" && uv pip install --python "$PY" --no-deps -e "$VERL_SRC" )
   step "安装本仓库额外训练依赖（不含 OpenHands/SkyRL）"
-  ( cd "$TMPDIR" && uv pip install --python "$PY" --no-project pyarrow pandas pytest )
+  ( cd "$TMPDIR" && uv pip install --python "$PY" pyarrow pandas pytest )
 fi
 
 # ---------------------------------------------------------------- 5. manifest 摘要
