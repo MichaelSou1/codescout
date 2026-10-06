@@ -101,6 +101,11 @@ if [ "$SKIP_DEPS" -eq 0 ]; then
   # verl v0.9.1 的 torch/vllm 走私有 wheelhouse 路由（uv.lock 内嵌 URL/index），
   # `uv export | uv pip -r` 会丢路由导致 `torch==2.11.0+cu130` 不可解析。
   # 因此用官方 uv sync 路径，UV_PROJECT_ENVIRONMENT 指向 conda prefix（已实测接受）。
+  # verl v0.9.1 的 uv.lock 中 wheelhouse URL 是过期 tag（`flash-attention-v2.8.3`），
+  # verl-wheelhouse 实际 release tag 带 py/torch 后缀。仅修 URL，不动版本与哈希。
+  step "修补 uv.lock 过期 wheelhouse URL（flash-attention）"
+  sed -i.bak 's|releases/download/flash-attention-v2.8.3/|releases/download/flash-attention-v2.8.3-py3.12-torch2.11.0/|' "$VERL_SRC/uv.lock"
+  grep -n "flash_attn-2.8.3-cp312" "$VERL_SRC/uv.lock" | head -2
   step "uv sync 官方锁定组合（fsdp+vllm）→ $PREFIX"
   ( cd "$VERL_SRC" && UV_PROJECT_ENVIRONMENT="$PREFIX" uv sync --frozen --extra fsdp --extra vllm )
   step "安装本仓库额外训练依赖（不含 OpenHands/SkyRL）"
