@@ -7,6 +7,8 @@
 | run_id | 日期（CST） | 目的 | 状态 | 对照 | 记录 |
 |---|---|---|---|---|---|
 | cs4b-stage0-docs | 2026-10-07 | 步骤0：源码事实核对、kml-1005 核验、协议 v1 与映射文档建立 | 完成（文档交付物） | 无前序 | [records/cs4b-stage0-docs.md](records/cs4b-stage0-docs.md) |
+| cs4b-env-a01 | 2026-10-07 | conda + verl v0.9.1 隔离环境（8 attempts） | **完成（验收 PASS）** | 无前序 | [records/cs4b-env-a01.md](records/cs4b-env-a01.md) |
+| cs4b-oracle-a01 | 2026-10-07 | 数据/划分/workspace 构造 oracle（步骤2–3 数据面） | 数据面完成；工具全链路待步骤4 | 无前序 | [records/cs4b-oracle-a01.md](records/cs4b-oracle-a01.md) |
 
 ## 计划中的 run_id（登记占用，未启动）
 
