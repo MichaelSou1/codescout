@@ -54,6 +54,9 @@ def main():
     ap.add_argument("--labels-output", required=True, help="私有标签 jsonl 路径（actor 不可读）")
     ap.add_argument("--validation-size", type=int, default=100)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--eval-mode", action="store_true",
+                    help="评测集语义：不切分（全量输出）、use_patch=False、保留 base_commit"
+                         "（Verified/Pro/Lite 定位集：base_commit checkout，无 mutation patch）")
     args = ap.parse_args()
 
     import pandas as pd
@@ -75,15 +78,26 @@ def main():
     n_kept = len(df)
     dropped = n_raw - n_kept
 
-    # use_patch=True 语义
+    # use_patch 语义：训练集（SWE-smith）mutation patch 置 True 且 base_commit=None；
+    # 评测集（Verified/Pro/Lite）base_commit checkout，不应用 patch（协议 §2）。
     df = df.copy()
-    df["use_patch"] = True
-    df["base_commit"] = None
+    if args.eval_mode:
+        df["use_patch"] = False
+        # base_commit 保留原值（checkout 语义）
+    else:
+        df["use_patch"] = True
+        df["base_commit"] = None
 
-    # 冻结语义：seed42 打乱，末 validation-size 条为 dev
-    df = df.sample(frac=1, random_state=args.seed).reset_index(drop=True)
-    val = df.iloc[-args.validation_size:]
-    train = df.iloc[:-args.validation_size]
+    if args.eval_mode:
+        # 评测集：全量输出为 test，不切分不乱序（分母冻结）
+        test = df.reset_index(drop=True)
+        train = test.iloc[0:0]
+        val = test
+    else:
+        # 冻结语义：seed42 打乱，末 validation-size 条为 dev
+        df = df.sample(frac=1, random_state=args.seed).reset_index(drop=True)
+        val = df.iloc[-args.validation_size:]
+        train = df.iloc[:-args.validation_size]
 
     # actor-safe 列：只保留任务可见信息 + episode 配置；file_changes/patch 进私有标签
     actor_safe_cols = ["instance_id", "repo", "base_commit", "problem_statement", "use_patch"]
@@ -118,7 +132,9 @@ def main():
         "created_utc": started,
         "finished_utc": datetime.now(timezone.utc).isoformat(),
         "source": source,
-        "semantics": "src/build_dataset.py: drop empty problem_statement, sample(frac=1, random_state=42), last 100 = validation",
+        "semantics": ("eval mode: full set as test, use_patch=False, base_commit preserved"
+                      if args.eval_mode else
+                      "src/build_dataset.py: drop empty problem_statement, sample(frac=1, random_state=42), last 100 = validation"),
         "rows": {"raw": int(n_raw), "kept": int(n_kept), "dropped_empty_issue": int(dropped),
                  "train": int(n_train), "validation": int(n_val)},
         "seed": args.seed,
