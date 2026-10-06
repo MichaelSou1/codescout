@@ -30,6 +30,20 @@ import sys
 from datetime import datetime, timezone
 
 
+def _to_jsonable(obj):
+    """pandas/numpy 对象 → 纯 Python JSON 可序列化结构（保序、保字符串）。"""
+    import numpy as np
+    if isinstance(obj, np.ndarray):
+        return [_to_jsonable(x) for x in obj.tolist()]
+    if isinstance(obj, np.generic):
+        return obj.item()
+    if isinstance(obj, dict):
+        return {k: _to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_jsonable(x) for x in obj]
+    return obj
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dataset", default="OpenHands/SWE-smith-py-code-search")
@@ -93,11 +107,11 @@ def main():
 
     with open(args.labels_output, "w") as f:
         for _, row in df.iterrows():
-            f.write(json.dumps({
+            f.write(json.dumps(_to_jsonable({
                 "instance_id": row["instance_id"],
                 "file_changes": row["file_changes"],
                 "patch": row["patch"],
-            }, ensure_ascii=False) + "\n")
+            }), ensure_ascii=False) + "\n")
 
     # manifest 摘要（可入 Git 的小文件）
     manifest = {
