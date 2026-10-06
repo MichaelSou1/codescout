@@ -37,14 +37,16 @@ export HF_HUB_CACHE="$CODESCOUT_DATA_ROOT/cache/hf/hub"
 export TORCH_HOME="$CODESCOUT_DATA_ROOT/cache/torch"
 export TRITON_CACHE_DIR="$CODESCOUT_DATA_ROOT/cache/triton"
 export CUDA_CACHE_PATH="$CODESCOUT_DATA_ROOT/cache/cuda"
-export RAY_TMPDIR="$CODESCOUT_DATA_ROOT/tmp/ray"
-export RAY_TMPDIR_PATH_UNUSED=1  # 只用 RAY_TMPDIR；防止误写 /tmp/ray
+# Ray session 目录放 RAM tmpfs：允许根路径太长（AF_UNIX socket 路径 ≤107 字节，
+# 2026-10-07 smoke 实测失败），且 AGENTS 禁写根盘；/dev/shm 是容器内存盘，只放
+# 临时 socket/session 状态，不落任何磁盘。
+export RAY_TMPDIR="/dev/shm/codescout-ray"
+mkdir -p "$RAY_TMPDIR" 2>/dev/null || true
 export TMPDIR="$CODESCOUT_DATA_ROOT/tmp"
 export TMP="$TMPDIR"
 export TEMP="$TMPDIR"
 export VLLM_CACHE_ROOT="${VLLM_CACHE_ROOT:-$CODESCOUT_DATA_ROOT/cache/vllm}"
 export WANDB_DIR="$CODESCOUT_DATA_ROOT/logs/wandb"
-export NODOCKER_LOGS_DIR_UNUSED=1
 mkdir -p "$XDG_CACHE_HOME" "$HF_HOME" "$TORCH_HOME" "$TRITON_CACHE_DIR" \
          "$CUDA_CACHE_PATH" "$RAY_TMPDIR" "$TMPDIR" "$WANDB_DIR" 2>/dev/null || true
 
