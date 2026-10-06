@@ -220,5 +220,17 @@ def _audit_emit(extra_info: dict[str, Any], result: dict[str, Any]) -> None:
     row.update(
         {k: v for k, v in result.items() if k.endswith("_precision") or k.endswith("_recall")}
     )
+
+    def _jsonable(o: Any) -> Any:
+        # numpy 标量/数组（verl 侧 num_turns 等为 np.int64/np.float64）
+        if hasattr(o, "item") and not isinstance(o, (str, bytes, dict, list)):
+            try:
+                return o.item()  # numpy scalar
+            except AttributeError:
+                pass
+        if hasattr(o, "tolist"):
+            return o.tolist()  # numpy array
+        return str(o)
+
     with open(path, "a", encoding="utf-8") as f:
-        f.write(_json.dumps(row, ensure_ascii=False) + "\n")
+        f.write(_json.dumps(row, ensure_ascii=False, default=_jsonable) + "\n")
