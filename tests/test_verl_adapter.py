@@ -604,7 +604,7 @@ def test_build_training_row_schema():
     ei = row["extra_info"]
     assert set(ei.keys()) == {
         "split", "index", "instance_id", "repo", "episode_id",
-        "tools_kwargs", "interaction_kwargs",
+        "tools_kwargs",
     }
     assert ei["index"] == 7 and isinstance(ei["index"], int)
     assert ei["split"] == "train" and ei["instance_id"] == "owner__repo-1234"
