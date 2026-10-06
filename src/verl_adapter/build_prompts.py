@@ -249,7 +249,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     ap.add_argument("--workspace-root", required=True,
                     help="workspace 根（协议 §3：codescout-data/workspaces/<run_id>，快照父目录）")
     ap.add_argument("--output", required=True, help="输出训练 parquet 路径")
-    ap.add_argument("--split", required=True, choices=["train", "validation"])
+    ap.add_argument("--split", required=True, choices=["train", "validation", "test"])
     ap.add_argument("--data-source", default=semantics.CODESEARCH_DATA_SOURCE)
     ap.add_argument("--terminal-timeout-s", type=float, default=120.0)
     ap.add_argument("--terminal-max-output-bytes", type=int, default=131072)
