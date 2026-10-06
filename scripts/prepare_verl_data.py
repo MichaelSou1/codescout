@@ -116,8 +116,13 @@ def main():
         safe.to_parquet(out)
         return out, len(safe)
 
-    train_path, n_train = emit(train, "train")
-    val_path, n_val = emit(val, "validation")
+    if args.eval_mode:
+        test_path, n_test = emit(test, "test")
+        train_path, n_train = test_path, 0
+        val_path, n_val = test_path, n_test
+    else:
+        train_path, n_train = emit(train, "train")
+        val_path, n_val = emit(val, "validation")
 
     with open(args.labels_output, "w") as f:
         for _, row in df.iterrows():
