@@ -1,0 +1,21 @@
+# CodeSearchAgentLoop 的 hydra 实例化声明（rollout.agent.agent_loop_config_path
+# 指向本文件）。加载点：verl/experimental/agent_loop/agent_loop.py:533-539 ——
+# 列表中每项直接写入 _agent_loop_registry，实例化时 hydra.utils.instantiate 以
+# _target_ 全限定名导入类并把其余键作为构造参数（agent_loop.py:682-693）。
+#
+# 顶层必须是**列表**（与 @register("codesearch_agent") 装饰器等价：装饰器注册
+# {"_target_": fqdn}，需要模块先被 import；本文件路径不依赖 import 顺序，二者
+# 同时保留，name 必须一致）。
+#
+# 协议出处：docs/reproduction/protocol-v1.md §5 —— "每次 LLM 调用"生成上限
+# 8192（不是整 episode 上限）；verl v0.9.1 LLMServerClient.generate 对
+# sampling_params["max_tokens"] 有原生支持（llm_server.py:254-273），agent loop
+# 在 run() 入口注入（B-3 消解，见 agent_loop.py docstring 第 4 点）。
+# 整 episode 预算另由 rollout.response_length 承担（累计 mask 判定，
+# tool_agent_loop.py:290,394）——两项的口径拆分见 configs/verl/codescout_4b.yaml
+# 的 response_length 注释。
+- name: codesearch_agent
+  _target_: src.verl_adapter.agent_loop.CodeSearchAgentLoop
+  # 每次调用生成上限 8192 token（协议 §5；B-3）。None=不注入（回退 llm_server
+  # 的累计 response_length 预算）。
+  per_call_max_new_tokens: 8192

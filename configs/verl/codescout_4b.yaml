@@ -1,0 +1,124 @@
+# CodeScout 4B verl v0.9.1 训练配置（GRPO advantage + GSPO policy loss）。
+#
+# 用途：本文件是 CodeScout 主 RL 配置的**唯一权威清单**。scripts/run_verl_4b.sh
+# 读取 overrides 列表、把 ${VAR} 占位符替换为运行参数后逐条传给
+# `python -m verl.trainer.main_ppo`（hydra overrides；等价于官方 GSPO 脚本
+# examples/gspo_trainer/run_qwen3_8b_fsdp.sh 的命令行形态，设计文档 §8.2）。
+# 因此本文件每项即 hydra override 字符串，键名/默认值均按 verl v0.9.1 实测源码
+# （设计文档 §8/§9 键树）。
+#
+# 协议出处标注约定：proto §N = docs/reproduction/protocol-v1.md 第 N 节；
+# design §N = docs/reproduction/verl-adapter-design.md 第 N 节（含差异 D1-D10）。
+
+overrides:
+
+  # ========================= 数据（RLHFDataset） =========================
+  # 输入为 build_prompts.py 产物（列：prompt/data_source/reward_model/extra_info），
+  # 其上游是 scripts/prepare_verl_data.py 的 actor-safe parquet + 私有 labels。
+  - 'data.train_files=${TRAIN_PARQUET}'            # proto §2 训练集
+  - 'data.val_files=${VAL_PARQUET}'                # proto §2 冻结 dev（末 100 条）
+  - 'data.train_batch_size=8'                      # proto §6：每 update 8 issues；×rollout.n=8 = 64 episodes/update
+  - 'data.max_prompt_length=40960'                 # proto §5：上下文 40960
+  - 'data.max_response_length=32768'               # 与 rollout.response_length 一致（长度过滤口径）
+  - 'data.filter_overlong_prompts=True'            # design D8：静默剔除超长样本，剔除数/instance_id 须入 manifest
+  - '+data.apply_chat_template_kwargs.enable_thinking=False'  # proto §1：训练/评测关 thinking（教程同款键）
+
+  # ========================= 模型与 FSDP2 =========================
+  - 'actor_rollout_ref.model.path=${MODEL_PATH}'   # proto §1：Qwen/Qwen3-4B-Instruct-2507（revision 下载时钉定）
+  - 'actor_rollout_ref.model.use_remove_padding=True'  # GSPO 官方脚本口径（design §8.2）
+  - 'actor_rollout_ref.actor.dtype=bfloat16'       # proto §1：全参数 BF16
+  - 'actor_rollout_ref.actor.strategy=fsdp2'       # 原脚本 trainer.strategy=fsdp2（FSDP2）
+  - 'actor_rollout_ref.actor.grad_clip=1.0'        # SkyRL max_grad_norm=1.0（design §9）
+
+  # ========================= rollout =========================
+  - 'actor_rollout_ref.rollout.mode=async'         # v0.9.1 唯一支持模式（config/rollout.py:278-292）
+  - 'actor_rollout_ref.rollout.name=vllm'          # proto §5：vLLM serving backend
+  - 'actor_rollout_ref.rollout.tensor_model_parallel_size=1'  # 原脚本 inference TP=1
+  - 'actor_rollout_ref.rollout.temperature=1.0'    # proto §5：训练温度 1.0
+  - 'actor_rollout_ref.rollout.gpu_memory_utilization=0.8'    # 原脚本同值
+  - 'actor_rollout_ref.rollout.n=8'                # proto §6：每 issue 8 条轨迹（GRPO 组；同 index 8 条）
+  - 'actor_rollout_ref.rollout.prompt_length=40960'    # proto §5：max_model_len/max_input_length 40960
+  # 整 episode 预算口径（design §4 / 任务 B-3 注释要求）：
+  #   - **每次 LLM 调用**生成上限 8192：agent_loop.yaml 的 per_call_max_new_tokens
+  #     注入 sampling_params["max_tokens"]（verl llm_server.py:254-273 原生支持，
+  #     agent_loop.py::run 注入）；
+  #   - **整 episode** 累计 response 预算 = rollout.response_length（判定用累计
+  #     mask 长度，tool_agent_loop.py:290,394）。6 turns × 8192 = 49152 是合法
+  #     生成上限，加工具结果后无裁剪上限更高；此处按 design §8.2 起步 32768，
+  #     profile 后修订。触顶未 finish → A-1 判 exhausted（mask 置 0、reward 0）。
+  - 'actor_rollout_ref.rollout.response_length=32768'
+  # dev 评测用正式评测参数（proto §5；原训练内 eval 0.6 仅记为源码差异，本项目不沿用）
+  - 'actor_rollout_ref.rollout.val_kwargs.temperature=0.7'
+  - 'actor_rollout_ref.rollout.val_kwargs.top_k=20'
+  - 'actor_rollout_ref.rollout.val_kwargs.top_p=0.8'
+  - 'actor_rollout_ref.rollout.val_kwargs.do_sample=True'
+  - 'actor_rollout_ref.rollout.val_kwargs.n=1'
+
+  # ========================= agent loop（A-1/A-2/B-3 消解点） =========================
+  - 'actor_rollout_ref.rollout.agent.num_workers=8'   # AgentLoopWorker 数（design §8.1）
+  - 'actor_rollout_ref.rollout.agent.default_agent_loop=codesearch_agent'  # 本项目自定义 loop
+  - 'actor_rollout_ref.rollout.agent.agent_loop_config_path=${REPO_ROOT}/src/verl_adapter/agent_loop.yaml'  # 含 per_call_max_new_tokens=8192
+
+  # ========================= multi_turn =========================
+  - 'actor_rollout_ref.rollout.multi_turn.tool_config_path=${REPO_ROOT}/src/verl_adapter/tools.yaml'  # terminal + localization_finish（proto §3）
+  - 'actor_rollout_ref.rollout.multi_turn.format=hermes'   # proto §5：hermes tool-call parser（原 vLLM 同 parser）
+  - 'actor_rollout_ref.rollout.multi_turn.max_assistant_turns=6'  # proto §3 冻结 6 turns（论文口径；prompt 文本同步 6）
+  - 'actor_rollout_ref.rollout.multi_turn.max_user_turns=5'      # 6 次调用至多 5 个工具轮（design §4）
+  - 'actor_rollout_ref.rollout.multi_turn.max_parallel_calls=5'  # proto §3：每轮并行 bash ≤5（注意 design B-2：verl 丢弃超额调用而非判罚）
+  - 'actor_rollout_ref.rollout.multi_turn.max_tool_response_length=16384'  # design §3 起步值（字符），按 profile 修订
+  - 'actor_rollout_ref.rollout.multi_turn.tool_response_truncate_side=left'  # 保文件尾/报错（design §3）
+
+  # ========================= 奖励通道 =========================
+  # 标准 reward manager + custom_reward_function（design §5.3：便于逐任务审计
+  # 与 infra 失败分列，不用 loop 内自算）。ground_truth 即 file_changes 私有
+  # 标签，只经 parquet reward_model 列到达 reward fn，不进 prompt（proto §8）。
+  - 'reward.custom_reward_function.path=${REPO_ROOT}/src/verl_adapter/reward.py'
+  - 'reward.custom_reward_function.name=compute_score'
+  # reward.reward_manager 默认 naive + reward.reward_model.enable=False → 流式
+  # reward 路径（design §5.1），无需覆盖。
+
+  # ========================= 算法（proto §6；design §9 键树） =========================
+  - 'algorithm.adv_estimator=grpo'                      # GRPO（组内 8 条同 issue）
+  - 'algorithm.norm_adv_by_std_in_grpo=False'           # 组中心化**不除以 std**（Dr.GRPO；SkyRL grpo_norm_by_std=false）
+  - 'algorithm.use_kl_in_reward=False'                  # KL 两项全关（proto §6）
+  - 'actor_rollout_ref.actor.use_kl_loss=False'
+  - 'actor_rollout_ref.actor.entropy_coeff=0'           # policy loss 无 entropy 项（proto §6/原脚本）
+
+  # ========================= policy loss：GSPO =========================
+  - 'actor_rollout_ref.actor.policy_loss.loss_mode=gspo'       # verl 原生 GSPO（design §9：同公式同 clamp）
+  - 'actor_rollout_ref.actor.loss_agg_mode=seq-mean-token-mean'  # SkyRL sequence_mean 对应（design §1.4/§10 D1；分母差异以最终梯度对齐验收）
+  - 'actor_rollout_ref.actor.clip_ratio_low=3e-4'              # proto §6：eps_low=0.0003
+  - 'actor_rollout_ref.actor.clip_ratio_high=4e-4'             # proto §6：eps_high=0.0004
+  - 'actor_rollout_ref.actor.clip_ratio_c=10.0'                # GSPO log 域 clamp max=10（core_algos.py:1598；官方脚本同值）
+
+  # ========================= 优化器（proto §6） =========================
+  - 'actor_rollout_ref.actor.optim.optimizer=AdamW'
+  - 'actor_rollout_ref.actor.optim.optimizer_impl=torch.optim'
+  - 'actor_rollout_ref.actor.optim.lr=1e-6'            # 恒定 lr（原 constant_with_warmup(0)）
+  - 'actor_rollout_ref.actor.optim.betas=[0.9,0.999]'  # SkyRL 解析值（design §2/skyrl-to-verl §2）
+  - 'actor_rollout_ref.actor.optim.weight_decay=1e-2'
+  - 'actor_rollout_ref.actor.optim.lr_scheduler_type=constant'  # FSDP 合法值 constant（design §9）
+  - 'actor_rollout_ref.actor.optim.clip_grad=1.0'      # SkyRL max_grad_norm=1.0
+  # AdamW eps：无顶层键，经 override_optimizer_config merge（design §9；不设则
+  # torch 默认 1e-8，与 SkyRL 一致但**显式写死防漂移**）。
+  - '+actor_rollout_ref.actor.optim.override_optimizer_config.eps=1e-8'
+
+  # ========================= batch / 更新轮数 =========================
+  - 'actor_rollout_ref.actor.ppo_epochs=1'                    # proto §6：update_epochs_per_batch=1
+  - 'actor_rollout_ref.actor.ppo_mini_batch_size=8'          # 8 prompts × n=8 = 64 序列/optimizer step（proto §6）
+  - 'actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=1' # 原脚本 micro_train_batch_size_per_gpu=1；仅影响浮点求和顺序（design D4），profile 后可调大
+
+  # ========================= trainer =========================
+  - 'trainer.project_name=codescout'
+  - 'trainer.experiment_name=${RUN_ID}'
+  - 'trainer.default_local_dir=${DATA_ROOT}/runs/${RUN_ID}/checkpoints'  # AGENTS §2：大产物写允许根
+  - 'trainer.total_training_steps=200'   # proto §6：论文 200 updates 预算；达预算即停并交付
+  - 'trainer.n_gpus_per_node=8'          # 论文 RL 配置 8×H100；节点数经 run 脚本参数覆盖
+  - 'trainer.save_freq=10'               # proto §6：checkpoint 每 10 updates
+  - 'trainer.max_actor_ckpt_to_keep=5'   # proto §6：保留最近 5 份
+  # HF export 每 50 updates：v0.9.1 无独立间隔键（save_contents 支持 'hf_model'
+  # 但随 save_freq=10 生效）→ 服务器验收项：用 checkpoint_callback_class 或
+  # save_contents 组合实现，冻结后回填本文件（proto §6 的 0/50/100/150/200 导出）。
+  - 'trainer.val_before_train=True'    # proto §6：dev 评测日程 0/10/40/100/200
+  - 'trainer.test_freq=10'              # 每 10 updates 验证；20/30/… 额外点仅记日志不入决策（proto §6 "不增测追好"）
+  - 'trainer.logger=["console","tensorboard"]'  # wandb 经 run 脚本按需追加

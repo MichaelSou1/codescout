@@ -1,0 +1,23 @@
+# CodeScout verl 工具声明（rollout.multi_turn.tool_config_path 指向本文件）。
+#
+# 格式（verl/tools/tool_registry.py:55-80，initialize_tools_from_config）：
+#   tools: [{class_name, tool_schema?, config: {type: native, ...}}]
+# tool_schema 省略 → 由工具类 get_openai_tool_schema() 提供（本项目用
+# ToolSchemaEnvelope 携带完整嵌套 schema，见 src/verl_adapter/tools.py docstring）。
+#
+# 协议出处：docs/reproduction/protocol-v1.md §3 —— 仅 terminal（bash）与
+# localization_finish 两个工具，schema 逐字复用 src/tools/localization_finish.py。
+# class_name 为绝对包路径：要求仓库根在 ray worker 的 sys.path 中
+#（scripts/run_verl_4b.sh 导出 PYTHONPATH；服务器验收项）。
+# data.tool_config_path / data.function_tool_path 用 ${oc.select:...} 引用同一
+# 文件（仅 RLHFDataset prompt 长度过滤用，设计文档 §8.1/legacy_data.yaml:46-49）。
+tools:
+  - class_name: src.verl_adapter.tools.TerminalTool
+    config:
+      type: native
+      # timeout_s / max_output_bytes / isolate_per_trajectory 的每实例值来自
+      # dataset 行 extra_info.tools_kwargs.terminal.create_kwargs
+      #（build_prompts.py 写入），此处 config 仅承载静态缺省（工具不读）。
+  - class_name: src.verl_adapter.tools.LocalizationFinishTool
+    config:
+      type: native
