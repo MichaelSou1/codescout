@@ -353,14 +353,11 @@ class LocalizationFinishTool(BaseTool):
         return ToolSchemaEnvelope(semantics.LOCALIZATION_FINISH_TOOL_SCHEMA)
 
     async def create(self, instance_id: Optional[str] = None, **kwargs: Any) -> tuple[str, "ToolResponse"]:
-        """finish 工具无 per-instance 状态；原实现亦不接受参数
-        （localization_finish.py:144-145 对任何参数抛 ValueError）。"""
-        create_kwargs = kwargs.get("create_kwargs", {})
-        if create_kwargs:
-            raise ValueError("LocalizationFinishTool doesn't accept create_kwargs")
-        if instance_id is None:
-            return str(uuid.uuid4()), ToolResponse()
-        return instance_id, ToolResponse()
+        """finish 工具无 per-instance 状态。create_kwargs 接受并忽略（parquet 嵌套
+        列要求非空 struct，见 build_prompts；这是 verl 侧管道参数，非模型可见的
+        tool schema——原 OpenHands SDK create 的参数限制
+        （localization_finish.py:144-145）不约束本接口）。"""
+        return instance_id or str(uuid.uuid4()), ToolResponse()
 
     async def execute(
         self,

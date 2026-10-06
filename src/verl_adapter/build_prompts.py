@@ -207,7 +207,9 @@ def build_training_row(
                     "max_output_bytes": int(terminal_max_output_bytes),
                 }
             },
-            semantics.FINISH_TOOL_NAME: {"create_kwargs": {}},
+            # finish 工具无状态；instance_id 仅为满足 parquet 嵌套 struct 非空要求
+            # （空 dict 会触发 pyarrow "struct with no child field"），create 侧忽略。
+            semantics.FINISH_TOOL_NAME: {"create_kwargs": {"instance_id": episode_id}},
         },
         "interaction_kwargs": {},
     }

@@ -51,6 +51,16 @@ class SkipTest(Exception):
     """分层 skip：对应依赖在本环境不可用。"""
 
 
+def _skip(msg: str):
+    """pytest 下走 pytest.skip（unittest 式 SkipTest 在普通 pytest 函数中会被记为失败）；
+    __main__ 直跑时抛本模块 SkipTest 由运行器捕获。"""
+    if "pytest" in sys.modules:
+        import pytest
+
+        pytest.skip(msg)
+    raise SkipTest(msg)
+
+
 def _import_scorer():
     """冻结 scorer 需要 PEP 604（Python ≥ 3.10），不可用时跳过 reward 层。"""
     try:
@@ -59,9 +69,9 @@ def _import_scorer():
         )
         from src.rewards.file_localization.module_rewards import parse_structured_outputs
     except TypeError as exc:
-        raise SkipTest(
+        _skip(
             "frozen scorer needs Python >= 3.10 (PEP 604 annotations): %r" % exc
-        ) from None
+        )
     return multilevel_localization_f1_reward, parse_structured_outputs
 
 
@@ -165,7 +175,7 @@ def test_schema_pydantic_equivalent():
     try:
         from pydantic import BaseModel, Field
     except ImportError as exc:
-        raise SkipTest("pydantic not available locally (server-side check): %r" % exc) from None
+        _skip("pydantic not available locally (server-side check): %r" % exc)
     from src.verl_adapter import semantics
 
     class CodeLocation(BaseModel):
@@ -200,7 +210,7 @@ def test_schema_matches_openhands_original_models():
             LocalizationFinishAction,
         )
     except Exception as exc:
-        raise SkipTest("openhands runtime not available locally: %r" % exc) from None
+        _skip("openhands runtime not available locally: %r" % exc)
     from src.verl_adapter import semantics
 
     orig_loc = LocalizationFinishAction.model_json_schema()
@@ -489,7 +499,7 @@ def test_render_user_template_manual_expectation():
     try:
         from src.verl_adapter import build_prompts as bp
     except Exception as exc:  # pragma: no cover
-        raise SkipTest("cannot import build_prompts: %r" % exc) from None
+        _skip("cannot import build_prompts: %r" % exc)
 
     working_dir = "/mmu_vlm_hdd/home/rhsu/playground/codescout-data/workspaces/run-x/ep1"
     issue = "Bug: search crashes on empty query.\nSteps: run rg."
@@ -637,7 +647,7 @@ def test_cli_end_to_end():
     try:
         import pandas as pd  # noqa: F401
     except ImportError as exc:
-        raise SkipTest("pandas not available locally (server-side check): %r" % exc) from None
+        _skip("pandas not available locally (server-side check): %r" % exc)
     from src.verl_adapter import build_prompts as bp
 
     tmp = Path(tempfile.mkdtemp(prefix="codescout-cli-test-"))
@@ -975,7 +985,7 @@ def test_agent_loop_import_guards():
     try:
         import src.verl_adapter.agent_loop as al  # noqa: F401
     except Exception as exc:
-        raise SkipTest("agent_loop import failed: %r" % exc) from None
+        _skip("agent_loop import failed: %r" % exc)
     assert hasattr(al, "CodeSearchAgentLoop")
 
 
