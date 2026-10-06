@@ -403,14 +403,11 @@ def test_tools_finish_execute_semantics():
     assert ag.extra_fields["codesearch_structured_locations"] == []
     assert ag.extra_fields["codesearch_finish_terminated"] is True
 
-    # 5) create：不接受 create_kwargs（原实现 :144-145）
-    try:
-        asyncio.run(tool.create(create_kwargs={"anything": 1}))
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("LocalizationFinishTool.create should reject create_kwargs")
-    inst_id, _ = asyncio.run(tool.create(create_kwargs={}))
+    # 5) create：接受并忽略 create_kwargs（parquet 嵌套 struct 非空管道参数，
+    #    非 OpenHands SDK 模型可见接口，见 tools.py docstring）
+    inst_id, _ = asyncio.run(tool.create(create_kwargs={"instance_id": "ep-1"}))
+    assert isinstance(inst_id, str) and inst_id
+    inst_id, _ = asyncio.run(tool.create())
     assert isinstance(inst_id, str) and inst_id
 
 
@@ -616,7 +613,7 @@ def test_build_training_row_schema():
     ck = tk["terminal"]["create_kwargs"]
     assert ck["workspace_root"] == "/ws-root" and ck["episode_id"] == "owner__repo-1234"
     assert ck["isolate_per_trajectory"] is True and ck["timeout_s"] == 120.0
-    assert tk["localization_finish"]["create_kwargs"] == {}
+    assert tk["localization_finish"]["create_kwargs"] == {"instance_id": "owner__repo-1234"}
     assert ei["interaction_kwargs"] == {}
     # 私有标签不出现在 prompt 或 extra_info 的任何字符串值里
     assert "PRIVATE" not in json.dumps(row["prompt"])
