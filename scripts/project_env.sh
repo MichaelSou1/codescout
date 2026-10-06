@@ -16,7 +16,6 @@ export CODESCOUT_OPENHANDS_PYTHON="${CODESCOUT_OPENHANDS_PYTHON:-$CODESCOUT_DATA
 export CONDA_DIST="$CODESCOUT_DATA_ROOT/tools/conda-dist"
 export CONDARC="$CODESCOUT_DATA_ROOT/envs/.condarc"
 export CONDA_PKGS_DIRS="$CODESCOUT_DATA_ROOT/cache/conda-pkgs"
-export CONDA_ENVS_PATH="$CODESCOUT_DATA_ROOT/envs"
 export CONDA_ENVS_DIRS="$CODESCOUT_DATA_ROOT/envs"
 # conda 可执行入口（若已安装）
 if [ -x "$CONDA_DIST/bin/conda" ]; then
