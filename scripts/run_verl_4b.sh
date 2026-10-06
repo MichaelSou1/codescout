@@ -77,6 +77,8 @@ mkdir -p "$RUN_DIR/checkpoints" "$RUN_DIR/logs" "$RUN_DIR/hydra"
 
 # ray worker 侧可导入 src.verl_adapter（tools.yaml class_name / agent_loop.yaml _target_）
 export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
+# tensorboard 落 run 目录（verl tracking.py:557 读 TENSORBOARD_DIR；默认写 checkout）
+export TENSORBOARD_DIR="$RUN_DIR/tensorboard"
 
 CONFIG_YAML="$REPO_ROOT/configs/verl/codescout_4b.yaml"
 
