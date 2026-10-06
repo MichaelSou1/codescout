@@ -162,6 +162,7 @@ def compute_score(
         # infra 异常（协议 §4）：reward 张量填 0 使训练不崩，但 failure_class
         # 分列上报，账本按冻结排除规则剔除，不计为模型 0 分。
         result["score"] = 0.0
+        _audit_emit(extra_info, result)
         return result
 
     if locations is None:
@@ -170,6 +171,7 @@ def compute_score(
         result["file_reward"] = 0.0
         result["module_reward"] = 0.0
         result["entity_reward"] = 0.0
+        _audit_emit(extra_info, result)
         return result
 
     file_changes = _extract_file_changes(ground_truth)
@@ -185,4 +187,38 @@ def compute_score(
     result["module_reward"] = float(reward_dict["module_reward"])
     result["entity_reward"] = float(reward_dict["entity_reward"])
     result.update(_precision_recall_audit(locations, file_changes))
+    _audit_emit(extra_info, result)
     return result
+
+
+def _audit_emit(extra_info: dict[str, Any], result: dict[str, Any]) -> None:
+    """逐任务审计（协议 §4"分列"与步骤 5 逐任务指标要求）。
+
+    环境变量 ``CODESCOUT_REWARD_AUDIT_PATH`` 设置时逐条 append JSONL
+    （instance_id/三级 F1/P-R/失败分类/轮数）；不设置时零开销直通。
+    评测与训练通用：审计行只含指标，绝不含 gold 内容（私有标签不出边界）。
+    """
+    import json as _json
+    import os as _os
+
+    path = _os.environ.get("CODESCOUT_REWARD_AUDIT_PATH")
+    if not path:
+        return
+    row = {
+        "instance_id": extra_info.get("instance_id"),
+        "episode_id": extra_info.get("episode_id"),
+        "data_source": result.get("data_source"),
+        "score": result.get("score"),
+        "file_reward": result.get("file_reward"),
+        "module_reward": result.get("module_reward"),
+        "entity_reward": result.get("entity_reward"),
+        "failure_class": result.get("failure_class"),
+        "num_turns": result.get("num_turns"),
+        "finish_call_count": result.get("finish_call_count"),
+        "trajectory_exhausted": result.get("trajectory_exhausted"),
+    }
+    row.update(
+        {k: v for k, v in result.items() if k.endswith("_precision") or k.endswith("_recall")}
+    )
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(_json.dumps(row, ensure_ascii=False) + "\n")
