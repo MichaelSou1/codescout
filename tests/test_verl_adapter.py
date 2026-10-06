@@ -614,7 +614,7 @@ def test_build_training_row_schema():
     assert ck["workspace_root"] == "/ws-root" and ck["episode_id"] == "owner__repo-1234"
     assert ck["isolate_per_trajectory"] is True and ck["timeout_s"] == 120.0
     assert tk["localization_finish"]["create_kwargs"] == {"instance_id": "owner__repo-1234"}
-    assert ei["interaction_kwargs"] == {}
+    # interaction_kwargs 省略（verl rl_dataset.py:404 .get 兜底；空 dict 不可写 parquet）
     # 私有标签不出现在 prompt 或 extra_info 的任何字符串值里
     assert "PRIVATE" not in json.dumps(row["prompt"])
     assert "PRIVATE" not in json.dumps(ei)

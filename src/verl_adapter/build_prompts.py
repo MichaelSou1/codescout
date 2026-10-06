@@ -211,7 +211,8 @@ def build_training_row(
             # （空 dict 会触发 pyarrow "struct with no child field"），create 侧忽略。
             semantics.FINISH_TOOL_NAME: {"create_kwargs": {"instance_id": episode_id}},
         },
-        "interaction_kwargs": {},
+        # interaction_kwargs 省略：verl 侧 rl_dataset.py:404 以 .get(..., {}) 兜底，
+        # 显式空 dict 无法写 parquet（struct 无 child field）。
     }
     return {
         "prompt": messages,
