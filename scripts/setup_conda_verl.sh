@@ -58,7 +58,6 @@ envs_dirs:
   - $CODESCOUT_DATA_ROOT/envs
 pkgs_dirs:
   - $CODESCOUT_DATA_ROOT/cache/conda-pkgs
-no_plugins: true
 channel_priority: strict
 EOF
 fi
