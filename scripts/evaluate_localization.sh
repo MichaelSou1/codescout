@@ -57,9 +57,10 @@ bash "$REPO_ROOT/scripts/run_verl_4b.sh" \
     "actor_rollout_ref.rollout.response_length=98304" \
     "$@"
 
-# ---- 汇总：从逐任务审计计算宏平均指标（score/failure_class 分列） ----
+# ---- 汇总：从逐任务审计计算宏平均指标（过滤占位训练任务，只统计被评测集） ----
 "$CODESCOUT_PYTHON" "$REPO_ROOT/scripts/eval_summary.py" \
-    --audit "$CODESCOUT_REWARD_AUDIT_PATH" --output "$RUN_DIR/summary.json"
+    --audit "$CODESCOUT_REWARD_AUDIT_PATH" --output "$RUN_DIR/summary.json" \
+    --filter-parquet "$VAL_PARQUET"
 
 echo
 echo "== 评测汇总（$RUN_ID）=="

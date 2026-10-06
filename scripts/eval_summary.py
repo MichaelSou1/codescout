@@ -19,6 +19,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--audit", required=True, help="reward fn 审计 JSONL 路径")
     ap.add_argument("--output", required=True, help="输出 summary.json 路径")
+    ap.add_argument("--filter-parquet", default=None,
+                    help="可选：只统计该 parquet（actor-safe 或 RL parquet）中出现"
+                         "的 instance_id——评测 run 的审计会混入占位训练任务，必须过滤")
     args = ap.parse_args()
 
     rows = []
@@ -27,6 +30,19 @@ def main():
             line = line.strip()
             if line:
                 rows.append(json.loads(line))
+
+    if args.filter_parquet:
+        import pandas as pd
+
+        df = pd.read_parquet(args.filter_parquet)
+        col = "extra_info" if "extra_info" in df.columns else None
+        if col is not None:
+            keep = {e["instance_id"] for e in df[col]}
+        elif "instance_id" in df.columns:
+            keep = set(df["instance_id"])
+        else:
+            raise SystemExit(f"ERROR: {args.filter_parquet} has neither extra_info nor instance_id")
+        rows = [r for r in rows if r.get("instance_id") in keep]
 
     n_lines = len(rows)
     by_inst: dict[str, list[dict]] = {}
