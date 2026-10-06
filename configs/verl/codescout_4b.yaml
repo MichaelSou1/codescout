@@ -42,6 +42,9 @@ overrides:
   - 'actor_rollout_ref.rollout.gpu_memory_utilization=0.8'    # 原脚本同值
   - 'actor_rollout_ref.rollout.n=8'                # proto §6：每 issue 8 条轨迹（GRPO 组；同 index 8 条）
   - 'actor_rollout_ref.rollout.prompt_length=40960'    # proto §5：max_model_len/max_input_length 40960
+  # vLLM max_model_len 必须显式设（默认取模型原生 262K，0.45 显存比例下 KV cache
+  # 不足会拒绝启动）。口径：覆盖整 episode 窗口 = prompt + 累计 response。
+  - 'actor_rollout_ref.rollout.max_model_len=73728'
   # 整 episode 预算口径（design §4 / 任务 B-3 注释要求）：
   #   - **每次 LLM 调用**生成上限 8192：agent_loop.yaml 的 per_call_max_new_tokens
   #     注入 sampling_params["max_tokens"]（verl llm_server.py:254-273 原生支持，
