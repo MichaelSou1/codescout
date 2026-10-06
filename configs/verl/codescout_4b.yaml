@@ -34,6 +34,9 @@ overrides:
   # ========================= rollout =========================
   - 'actor_rollout_ref.rollout.mode=async'         # v0.9.1 唯一支持模式（config/rollout.py:278-292）
   - 'actor_rollout_ref.rollout.name=vllm'          # proto §5：vLLM serving backend
+  # log_prob micro batch：v0.9.1 运行期强制显式设置（check_mutually_exclusive）；
+  # 只影响显存/吞吐不影响语义，取 1 对齐原 micro=1 精神。
+  - 'actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=1'
   - 'actor_rollout_ref.rollout.tensor_model_parallel_size=1'  # 原脚本 inference TP=1
   - 'actor_rollout_ref.rollout.temperature=1.0'    # proto §5：训练温度 1.0
   - 'actor_rollout_ref.rollout.gpu_memory_utilization=0.8'    # 原脚本同值
