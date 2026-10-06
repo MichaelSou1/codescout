@@ -26,8 +26,9 @@ overrides:
   # ========================= 模型与 FSDP2 =========================
   - 'actor_rollout_ref.model.path=${MODEL_PATH}'   # proto §1：Qwen/Qwen3-4B-Instruct-2507（revision 下载时钉定）
   - 'actor_rollout_ref.model.use_remove_padding=True'  # GSPO 官方脚本口径（design §8.2）
-  - 'actor_rollout_ref.actor.dtype=bfloat16'       # proto §1：全参数 BF16
-  - 'actor_rollout_ref.actor.strategy=fsdp2'       # 原脚本 trainer.strategy=fsdp2（FSDP2）
+  # dtype：v0.9.1 无 actor.dtype 键；默认已解析为 bfloat16（--cfg job 核验），
+  # proto §1 全参数 BF16 由默认满足，不覆盖。
+  - 'actor_rollout_ref.actor.strategy=fsdp2'       # 原脚本 trainer.strategy=fsdp2（v0.9.1 合法值，engine.py:306）
   - 'actor_rollout_ref.actor.grad_clip=1.0'        # SkyRL max_grad_norm=1.0（design §9）
 
   # ========================= rollout =========================
