@@ -1,0 +1,33 @@
+{
+  "created_utc": "2026-10-06T20:14:48.024876+00:00",
+  "finished_utc": "2026-10-06T20:14:54.298543+00:00",
+  "source": {
+    "dataset": "OpenHands/SWE-smith-py-code-search",
+    "revision": "b1e6864f1c847455ea64c7ebdb4164da2b902bb6",
+    "num_rows": 39287,
+    "features": {
+      "instance_id": "Value('string')",
+      "file_changes": "List({'changes': {'added_entities': List(Value('string')), 'added_modules': List(Value('string')), 'edited_entities': List(Value('string')), 'edited_modules': List(Value('string'))}, 'file': Value('string')})",
+      "repo": "Value('string')",
+      "base_commit": "Value('null')",
+      "problem_statement": "Value('string')",
+      "patch": "Value('string')"
+    }
+  },
+  "semantics": "src/build_dataset.py: drop empty problem_statement, sample(frac=1, random_state=42), last 100 = validation",
+  "rows": {
+    "raw": 39287,
+    "kept": 39287,
+    "dropped_empty_issue": 0,
+    "train": 39187,
+    "validation": 100
+  },
+  "seed": 42,
+  "outputs": {
+    "train": "/mmu_vlm_hdd/home/rhsu/playground/codescout-data/datasets/swe_smith_prepared/train.parquet",
+    "validation": "/mmu_vlm_hdd/home/rhsu/playground/codescout-data/datasets/swe_smith_prepared/validation.parquet",
+    "labels": "/mmu_vlm_hdd/home/rhsu/playground/codescout-data/secrets/private-labels/swe_smith_labels.jsonl"
+  },
+  "labels_sha256": "5437915f2f2cacc6eb5f5febbd888423fd5c2bc29dd9750c243454813b459e21",
+  "instance_id_overlap_train_val": []
+}
