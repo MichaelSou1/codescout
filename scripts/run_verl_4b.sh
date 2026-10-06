@@ -65,9 +65,15 @@ for required in "$MODEL_PATH" "$TRAIN_PARQUET" "$VAL_PARQUET"; do
     fi
 done
 
-DATA_ROOT="${CODESCOUT_DATA:-$REPO_ROOT/codescout-data}"
+# project_env.sh 导出的是 CODESCOUT_DATA_ROOT；兼容旧名 CODESCOUT_DATA，
+# 绝不回退到 $REPO_ROOT/codescout-data（2026-10-07 smoke 实测写进 checkout）。
+DATA_ROOT="${CODESCOUT_DATA_ROOT:-${CODESCOUT_DATA:-}}"
+if [ -z "$DATA_ROOT" ]; then
+    echo "ERROR: CODESCOUT_DATA_ROOT is not set — source scripts/project_env.sh first" >&2
+    exit 1
+fi
 RUN_DIR="$DATA_ROOT/runs/$RUN_ID"
-mkdir -p "$RUN_DIR/checkpoints" "$RUN_DIR/logs"
+mkdir -p "$RUN_DIR/checkpoints" "$RUN_DIR/logs" "$RUN_DIR/hydra"
 
 # ray worker 侧可导入 src.verl_adapter（tools.yaml class_name / agent_loop.yaml _target_）
 export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
@@ -114,7 +120,8 @@ if [ "${ENABLE_WANDB:-0}" = "1" ]; then
     export WANDB_PROJECT="${WANDB_PROJECT:-codescout}"
 fi
 OVERRIDES="$OVERRIDES
-trainer.logger=$LOGGERS"
+trainer.logger=$LOGGERS
+hydra.run.dir=$RUN_DIR/hydra"
 
 # --------------------------------------------------------------------------
 # 启动（verl v0.9.1 同步 trainer 主入口；额外 overrides 追加在后 → hydra 后者生效）
