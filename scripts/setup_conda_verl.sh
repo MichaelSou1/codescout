@@ -8,6 +8,10 @@ set -euo pipefail
 
 VERL_TAG="v0.9.1"
 VERL_REPO="https://github.com/volcengine/verl.git"
+# verl 声明 requires-python >=3.10,<3.13，但 v0.9.1 官方 uv.lock 的 GPU 后端
+# wheel（torch/vllm/flash-attn 等）marker 均为 python_full_version >= '3.12'——
+# 3.11 会让整组被跳过。故取 3.12（2026-10-07 实测决策，入账 cs4b-env-a01）。
+PYTHON_VERSION="${CODESCOUT_PYTHON_VERSION:-3.12}"
 MINIFORGE_VERSION="26.7.2-0"
 MINIFORGE_URL="https://github.com/conda-forge/miniforge/releases/download/${MINIFORGE_VERSION}/Miniforge3-${MINIFORGE_VERSION}-Linux-x86_64.sh"
 MINIFORGE_SHA_URL="${MINIFORGE_URL}.sha256"
@@ -76,8 +80,8 @@ step "conda: $("$CONDA_BIN" --version 2>/dev/null || echo MISSING)"
 
 # ---------------------------------------------------------------- 2. verl-vllm prefix
 if [ ! -x "$PREFIX/bin/python" ]; then
-  step "创建 conda prefix: $PREFIX (python=3.11)"
-  "$CONDA_BIN" create -y -p "$PREFIX" python=3.11 pip
+  step "创建 conda prefix: $PREFIX (python=${PYTHON_VERSION})"
+  "$CONDA_BIN" create -y -p "$PREFIX" python="${PYTHON_VERSION}" pip
 else
   step "prefix 已存在: $PREFIX ($("$PREFIX/bin/python" --version 2>&1))"
 fi
@@ -103,6 +107,28 @@ if [ "$SKIP_DEPS" -eq 0 ]; then
   ( cd "$VERL_SRC" && uv pip install --python "$PY" -r "$LOCK_EXPORT" )
   step "安装本仓库额外训练依赖（不含 OpenHands/SkyRL）"
   ( cd "$TMPDIR" && uv pip install --python "$PY" pyarrow pandas pytest )
+  step "锁定组合导入断言（torch/vllm/verl/flash_attn 必须存在且版本匹配）"
+  ( cd "$TMPDIR" && "$PY" - <<'PYEOF'
+import importlib, sys
+expected = {"torch": "2.11.0", "vllm": "0.24.0", "transformers": "5.9.0",
+            "flash_attn": "2.8.3", "trl": "0.27.0"}
+import importlib.metadata as md
+fail = []
+for name, exp in expected.items():
+    try:
+        got = md.version(name)
+        if not got.startswith(exp):
+            fail.append(f"{name}=={got} (expected {exp}*)")
+        print(f"OK {name}=={got}")
+    except md.PackageNotFoundError:
+        fail.append(f"{name} MISSING")
+import verl, torch
+print(f"OK verl {verl.__version__} importable; torch cuda available: {torch.cuda.is_available()}")
+if fail:
+    print("LOCK MISMATCH:", "; ".join(fail), file=sys.stderr)
+    sys.exit(1)
+PYEOF
+  )
 fi
 
 # ---------------------------------------------------------------- 5. manifest 摘要
