@@ -39,6 +39,8 @@
 
 manifest 已入 Git：`manifests/environment/install-summary.json`、`manifests/environment/check.json`（commit `9d39a1e`）。
 
+**GPU 短测（2026-10-07 04:26 CST，单卡 GPU-9ea7da5d，准入核对后启动）**：vLLM 0.24 离线加载 Qwen3-4B-Instruct-2507@cdbee75f 成功（407.7s 含首次编译/CUDA graph 捕获 4s/0.98GiB），`gpu_memory_utilization=0.5` 峰值 41.5GiB；贪心短生成正常（"Ready."）；4 路批量采样正常；进程退出后显存 0 MiB（清理干净）。消耗：1 GPU × 约 9 分钟 ≈ 0.15 GPUh。FSDP 初始化与多卡通信留待步骤 6 的 2–4 卡 correctness smoke。
+
 成本（attempt 1–8 累计）：约 45 分钟墙钟，下载缓存约 15GB（允许根），0 GPUh，0 API 调用。
 
 ## 6. 符合预期与否
