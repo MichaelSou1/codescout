@@ -98,13 +98,11 @@ step "verl 源码: $VERL_SRC @ $VERL_COMMIT"
 # ---------------------------------------------------------------- 4. 依赖安装（uv + 官方 uv.lock）
 PY="$PREFIX/bin/python"
 if [ "$SKIP_DEPS" -eq 0 ]; then
-  step "从官方 uv.lock 导出 fsdp+vllm 锁定依赖"
-  LOCK_EXPORT="$VERL_SRC/requirements-codescout-lock.txt"
-  ( cd "$VERL_SRC" && uv export --frozen --no-dev --extra fsdp --extra vllm -o "$LOCK_EXPORT" )
-  # 注意：导出文件首行是 `-e .`（verl 本体 editable），uv 以 cwd 解析该相对路径，
-  # 因此必须在 VERL_SRC 内执行安装；既装依赖也一并 editable 安装 verl。
-  step "安装锁定依赖 + verl 本体到 prefix（uv pip，cwd=$VERL_SRC）"
-  ( cd "$VERL_SRC" && uv pip install --python "$PY" -r "$LOCK_EXPORT" )
+  # verl v0.9.1 的 torch/vllm 走私有 wheelhouse 路由（uv.lock 内嵌 URL/index），
+  # `uv export | uv pip -r` 会丢路由导致 `torch==2.11.0+cu130` 不可解析。
+  # 因此用官方 uv sync 路径，UV_PROJECT_ENVIRONMENT 指向 conda prefix（已实测接受）。
+  step "uv sync 官方锁定组合（fsdp+vllm）→ $PREFIX"
+  ( cd "$VERL_SRC" && UV_PROJECT_ENVIRONMENT="$PREFIX" uv sync --frozen --extra fsdp --extra vllm )
   step "安装本仓库额外训练依赖（不含 OpenHands/SkyRL）"
   ( cd "$TMPDIR" && uv pip install --python "$PY" pyarrow pandas pytest )
   step "锁定组合导入断言（torch/vllm/verl/flash_attn 必须存在且版本匹配）"
