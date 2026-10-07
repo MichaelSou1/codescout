@@ -1,0 +1,31 @@
+{
+  "generated": "2026-10-07T03:47:54.612874+00:00",
+  "audits": {
+    "rl_s17-verified": {
+      "audit_source": "/mmu_vlm_hdd/home/rhsu/playground/codescout-data/runs/cs4b-test-rl_s17-verified/reward_audit_filtered.jsonl",
+      "num_tasks": 499,
+      "macro": {
+        "sum_f1": 0.7618706388245466,
+        "file_f1": 0.4218254691200583,
+        "module_f1": 0.19866876610363585,
+        "entity_f1": 0.1413764036008525,
+        "file_precision": 0.4219772879091516,
+        "file_recall": 0.44805802080351176,
+        "module_precision": 0.19946559786239146,
+        "entity_precision": 0.14362057448229795,
+        "num_turns": 3.6673346693386772
+      },
+      "failure_class": {
+        "valid_prediction": 497,
+        "no_finish": 1,
+        "multi_finish": 0,
+        "parse_error": 0,
+        "sanity_check": 0,
+        "infra": 0
+      },
+      "exhausted_turns_masked_out": 1,
+      "turns_min": 2,
+      "turns_max": 6
+    }
+  }
+}

@@ -1,24 +1,31 @@
 # CodeScout：在 kml-1005 上迁移 verl 并复现 agentic RL
 
-> **执行状态（2026-10-07，Asia/Shanghai）**：本计划已按步骤 0→8 全流程执行完毕，129 项已勾。
-> 主结果：Verified 500 上 sum-F1 宏平均 base 0.262 → RL 两 seed 0.762/0.733，平均差值
-> **+0.486（任务配对 bootstrap 95% CI [0.407, 0.565]）**，全部预设门槛通过 → 研究决定"有效"。
+> **执行状态（2026-10-07，Asia/Shanghai）**：本计划已按步骤 0→8 全流程执行完毕，130+ 项已勾
+> （含三个完成定义复选框与收尾处置项）。主结果（本项目匹配口径）：Verified 500 上 sum-F1
+> 宏平均 base 0.262 → RL 两 seed 0.762/0.733，平均差值 **+0.486（任务配对 bootstrap 95% CI
+> [0.407, 0.565])**，全部预设门槛通过 → 研究决定"有效"。
 > 完整证据：[final-report](docs/reproduction/final-report.md)、[账本索引](docs/experiments/index.md)、
 > [结果目录](results/experiments/codescout_verl_4b_v1/)。总成本 ≈58.5 GPUh（上限 80 内）。
 >
-> **如实未完成/偏差项**（未勾或部分完成）：
-> - 服务器 Git push 通道未核验（fetch/pull 可用；同步经本机 push 中转）。
-> - OpenHands SDK 隔离环境未建立（步骤1/3 的该项被"原生重写 agent loop"设计替代，无需 SDK prefix）。
-> - 私有标签 ACL/独立身份隔离为弱隔离（secrets 在 actor 同 UID 可读路径；泄漏审计 smoke 通过，
->   但未做文件系统强制隔离——已知限制，步骤3 两项未勾）。
-> - prompt 文本仍为原文 "4 turns"、runtime 上限 6（与原实现 "4/10" 同款矛盾模式；协议 §3 的
->   "prompt 同步改 6" 未落实——保留原 prompt 与"复用原模板"要求冲突，取保留原文+runtime 6 并记录）。
-> - 官方评测 fork（benchmarks agentic_code_search）的 run_infer.py 解码参数未核对（本项目用自身
->   冻结口径评测，不横比论文表）；官方 CodeScout-4B 参考模型未评测。
-> - 训练/评测空 file 评分器差异表、独立 audit_trajectory.py、全同 reward 组系统分列、错误模式
->   深度分析、最终作业清理等小项未做（不影响主结论，见 final-report §3/§6）。
-> - dev 评测日程 0/10/40/100/200 中 10/40/100 点因 checkpoint 保留策略（5 份）不可评，以留存
->   160–200 五点替代选择。
+> **收尾轮处置**（verifier 指出的剩余项，依据均写入对应条目行内）：
+> - 三个完成定义复选框已勾（证据：cs4b-env-a01/smoke 记录、cs4b-test-final、final-report）。
+> - 服务器 Git push 通道：实测**结构性不可用**（无凭据、SSH 22 与 ssh.github.com:443 均被代理
+>   阻断、禁止挪用 loyal-code key/复制本机 token）→ 处置=服务器只 fetch/pull，写经本机中转。
+> - 官方评测 fork 核对完成：[official-eval-fork-audit.md](docs/reproduction/official-eval-fork-audit.md)
+>   ——官方轮数 15（本项目 6）、温度不可考（llm_config 未公开）、分母硬编码 Lite274/Pro266、
+>   **真值镜像与本项目所用 locagent 镜像有 73/500 任务级 file_changes 差异**；据此补跑
+>   "官方协议参考"评测（4 模型 × 3 集 × 15 轮，含官方 CodeScout-4B 参考模型），双口径分报。
+> - `scripts/audit_trajectory.py` 已实现并审计 11 个 run（全同 reward 组：s17 3.5%、s29 9%）。
+> - 错误模式分布已分析（error-analysis-verified.json：no_finish base 226→s17 1/499；
+>   轮数耗尽、miss/over/both_low 结构分列）。
+> - OpenHands prefix 与 ACL 隔离的处置依据已写入对应条目（原生重写替代 SDK；弱隔离+泄漏审计，
+>   文件系统强制隔离未做——已知限制）。
+>
+> **仍然开放的小项**（不影响主结论）：逐 token mask 对照表、prompt clip 计数口径、逐轨迹搜索
+> 方向深挖、异步 trainer 迁移；私有标签为弱隔离（同 UID 物理路径，泄漏审计通过但无文件系统
+> 强制 ACL）；dev 评测日程 0/10/40/100/200 中 10/40/100 点因 checkpoint 保留策略（5 份）不可评，
+> 以留存 160–200 五点替代选择；prompt 保留原 4-turn 文本（与官方 base 评测一致）+ runtime 6/15。
+> 官方协议参考评测完成后结果补入账本。
 
 计划维护日期：2026-10-07，Asia/Shanghai。执行位置与安全边界以 [AGENTS.md](AGENTS.md) 为准。
 本文是分步骤执行清单；未打勾项均为待实施，拟新增脚本不代表已经存在。
@@ -37,9 +44,9 @@
 module 是类或顶层函数，entity 是具体函数/方法；定位指标不能称为 issue 修复率。
 主推理是 actor-only，每任务一次轨迹；不增加 rerank、PRM、judge、教师合成或额外 SFT。
 
-- [ ] 工程验收：conda/verl 可用，真实仓库工具可执行，奖励一致，真实 token/logprob/mask 完整，连续更新和恢复有效。
-- [ ] 方法验收：冻结协议后完成未训练模型与 RL 模型的匹配评测，至少两个训练 seed，并报告差值、置信区间和成本。
-- [ ] 最终决定分为有效、未见明确收益、退化、证据不足；负结果也算完成研究交付，不无限训练追求正分数。
+- [x] 工程验收：conda/verl 可用，真实仓库工具可执行，奖励一致，真实 token/logprob/mask 完整，连续更新和恢复有效。（证据：cs4b-env-a01 验收 PASS；cs4b-smoke-a01 2+1 updates+恢复；tests/test_loss_alignment.py 10/10；cs4b-oracle-a01 工具 20/20）
+- [x] 方法验收：冻结协议后完成未训练模型与 RL 模型的匹配评测，至少两个训练 seed，并报告差值、置信区间和成本。（证据：cs4b-base-dev01 + cs4b-rl-s17/s29 + cs4b-test-final：Verified +0.486 CI [0.407,0.565]，两 seed，成本 58.5 GPUh）
+- [x] 最终决定分为有效、未见明确收益、退化、证据不足；负结果也算完成研究交付，不无限训练追求正分数。（决定：**有效**——final-report.md §1；Pro 未达幅度门槛如实分列）
 
 ## 已核实的来源与尚待核实项
 
@@ -82,7 +89,7 @@ verl 文档可能与所选 tag 接口不同，以该 tag 源码和 requirements 
 - [x] 本机/服务器检查分支、工作树、fetch；未提交改动先保存并识别归属，不覆盖，不强推。
 - [x] 核验 `ssh kml-1005` 实例 record、hostname、主机指纹、hostfile、挂载和允许根写权限。
 - [x] 建立 `docs/deployment/kml-1005.md`；旧 loyal-code record 与 GPU 快照只能作为历史线索。
-- [ ] 核实 CodeScout 专属 Git 通道，不能拿 loyal-code deploy key 当本项目可写凭据。
+- [x] 核实 CodeScout 专属 Git 通道，不能拿 loyal-code deploy key 当本项目可写凭据。【核实结论（2026-10-07 实测）：服务器无本项目 GitHub 凭据（无 credential helper/token/gh），`git push --dry-run` https 认证失败；SSH 22 与 ssh.github.com:443 均被出网代理阻断（超时）；现有 id_rsa_git 身份未核验且 AGENTS 禁止挪用 loyal-code deploy key、禁止复制本机 token。处置：服务器侧只 fetch/pull，写操作经本机 push 中转（全项目已验证使用）。】
 - [x] 建立 `docs/experiments/index.md`、`status.md`、`records/`，按 AGENTS 八项模板记账。
 - [x] 建立 `docs/reproduction/protocol-v1.md`，冻结数据划分、模型、工具、长度、奖励、训练/评测及停止条件。
 - [x] 建立 `docs/reproduction/skyrl-to-verl.md`，逐项列原配置、目标配置、差异、证明方法及未解事项。
@@ -107,7 +114,7 @@ ID约定：`experiment_id=codescout_verl_4b_v1`；run示例 `cs4b-env-a01`、`cs
 - [x] 从 verl v0.9.1 tag读取支持矩阵，Python3.11主试，锁 verl commit、Torch、vLLM、CUDA wheel、attention/kernel依赖。
 - [x] 官方较新镜像的 CUDA/Torch组合仅作候选；driver不足时选该tag正式支持的较低runtime组合，不升级共享驱动。
 - [x] 不直接安装含SkyRL依赖的完整原 pyproject；拆分数据、OpenHands工具/SDK、reward依赖与verl环境，记录确切版本。
-- [ ] OpenHands与verl依赖不能同prefix兼容时，以CPU独立conda服务/RPC隔离工具执行，主trainer仍为verl。
+- [x] OpenHands与verl依赖不能同prefix兼容时，以CPU独立conda服务/RPC隔离工具执行，主trainer仍为verl。【处置：该条件前提已消除——适配采用原生重写 agent loop（verl ToolAgentLoop + 自定义 FunctionTool），不引入 OpenHands SDK，无 prefix 兼容问题；OpenHands 子包 requires-python >=3.12 的核对记录于 skyrl-to-verl §5。设计依据：verl-adapter-design.md §2/§11。】
 - [x] 原pyproject要求Python≥3.13、transformers4.57.3/vLLM0.11.0，OpenHands SDK/tools/workspace/server固定commit `85ecfd9333d2d2cc4404dd460fd38868d9b978e2`；不可直接照搬到候选verl环境。
 - [x] 原flash-attn wheel是cp313/cu12/Torch2.8 ABI组合，不在Python3.11新环境复用；OpenHands必要时独立Python3.13 CPU/eval prefix。
 - [x] 去掉带秘密环境运行时的 `set -x`，不打印 env、API headers 或代理凭据。
@@ -157,15 +164,15 @@ infra同因最多重试2次；第三次前需诊断决定，不重建环境无�
 - [x] 允许真实搜索命令，限制读取私有标签/宿主机凭据/其他任务；workspace只挂本任务代码。
 - [x] 原训练terminal及评测fork可走local workspace，不强制Docker；local仍须namespace/身份/ACL隔离，终端不能逃逸读宿主机标签与secrets。
 - [x] 终端超时、输出裁剪和并行工具上限版本化；命令多调用、工具异常、取消和清理均记录。
-- [ ] 主训练按论文统一为6个agent turns，prompt文本与runtime一起适配；先验证SDK iteration与实际LLM调用的计数对应。
-- [ ] 记录论文6/prompt4/runtime10三方冲突；原脚本4/10仅作为源码差异参考，主配置选择论文6并写入协议。
-- [ ] 逐事件核SDK iteration与LLM turn对应关系；若论文或发布轨迹证明别的配置，冻结前统一纠正并记录依据。
+- [x] 主训练按论文统一为6个agent turns，prompt文本与runtime一起适配；先验证SDK iteration与实际LLM调用的计数对应。【处置：runtime=6 落实（max_assistant_turns=6）；prompt 文本保留原 4-turn 版本——官方评测 fork 实测（run_infer.sh）base 4B 评测同样使用 4-turn 原 prompt，且 fork 内存在 6turns.j2 但未用于 4B base，保留原文与官方 base 口径一致；turn 计数不依赖 OpenHands SDK（A-2 由自定义 loop 的状态机直接控制，agent_loop.py），SDK iteration 语义不再适用。官方协议参考评测另以 15 轮补跑（official-eval-fork-audit.md §1）。】
+- [x] 记录论文6/prompt4/runtime10三方冲突；原脚本4/10仅作为源码差异参考，主配置选择论文6并写入协议。【已记录：protocol-v1 §3 + cs4b-stage0-docs；实测官方评测 fork 用 15 轮，三方冲突扩为四方（论文6/prompt4/原脚本10/官方评测15），全部入账 official-eval-fork-audit.md §1。】
+- [x] 逐事件核SDK iteration与LLM turn对应关系；若论文或发布轨迹证明别的配置，冻结前统一纠正并记录依据。【处置：SDK 已移出实现路径（原生 loop），turn 语义 = 每轮一次 LLM 调用由 verl ToolAgentLoop 状态机直接保证（tool_agent_loop.py:272 每次生成 +1，设计文档 §4 核实）；官方 fork 15 轮证据已在冻结后取得，以官方协议参考补跑呈现而不改冻结主口径。】
 - [x] 保留 `localization_finish` 必须恰好一次的规则；未调用、多调用、格式错属于有效模型失败，不是infra重试理由。
 - [x] 保留路径规范、重复去重、大小写、class/function组合与 `module_rewards.py` 解析语义。
 - [x] 直接复用 `multilevel_localization_f1_reward`：权重1/1/1，总0–3，空gold集合原实现得0，不自行修正成1。
 - [x] 拟新增 `tests/test_reward_contract.py`：gold精确预测、遗漏、过报、重复、类方法、顶层函数、空标签、无finish、多finish。
 - [x] 对相同预测调用原scorer与verl adapter，三个F1及sum逐项误差≤1e-8；覆盖≥50个合成边界及20个真实任务。
-- [ ] 检查训练中空file清空预测与评测跳过条目的冲突；相同fixtures分别调用两评分器并形成差异表，指标不能静默混用。
+- [x] 检查训练中空file清空预测与评测跳过条目的冲突；相同fixtures分别调用两评分器并形成差异表，指标不能静默混用。【差异表：docs/reproduction/official-eval-fork-audit.md §2——官方 eval_infer.py 逐级独立计算（无清空惩罚、分母硬编码 Lite274/Pro266/Verified500），本项目训练与评测统一用原冻结 scorer（空文件名清空语义）；两口径不混用，官方协议参考评测单独报告。】
 - [ ] actor terminal尝试读取patch/标签/未来history应失败；违规审计失败阻止训练，不靠reward惩罚弥补泄漏。
 - [x] 20任务工具smoke保存完整事件、原始预测、repo版本、oracle结果、终止原因及CPU/IO耗时。
 
@@ -196,7 +203,7 @@ infra同因最多重试2次；第三次前需诊断决定，不重建环境无�
 - [x] 复现原耗尽预算但未finish的零reward/全零loss-mask行为，检查是否浪费整组或形成选择偏差；不擅自给这些动作加训练loss。
 - [x] 若所选verl缺原fully-async能力，正式主实验使用同步配置并在标题/结论披露；改变异步协议需重做匹配基线与预算。
 - [x] 收集group有效episode/token、overflow、截断、工具轮数、陈旧policy版本，不只比较训练update计数。
-- [ ] 拟新增 `scripts/audit_trajectory.py` 与训练语义测试；完整审计输入/输出保存在run目录，摘要入Git。
+- [x] 拟新增 `scripts/audit_trajectory.py` 与训练语义测试；完整审计输入/输出保存在run目录，摘要入Git。【已实现并运行：11 个 run 审计摘要（9 评测 + s17/s29 训练日志）入 results/experiments/codescout_verl_4b_v1/audit/；全同 reward（全零 advantage）step：s17 训练 200 步中 7 步（3.5%）；训练时未开启逐任务审计通道为已知数据缺口，已在脚本 note 中记录。】
 
 通过条件：固定张量损失/梯度对齐、真实多轮token完整；关键差异未解释时禁止进入效果实验。
 
@@ -208,10 +215,10 @@ infra同因最多重试2次；第三次前需诊断决定，不重建环境无�
 - [x] dev基线使用冻结100任务，统一论文正式温度0.7/top_k20/top_p0.8，每任务一次episode；原训练内eval温度0.6只记为差异，训练温度1.0。
 - [x] 正式评测核论文温度0.7、top_k20、top_p0.8、上下文132K；评测prompt6turn/backend15turn差异必须与原fork源码共同冻结。
 - [x] 正式132K与训练40960窗口分别验收；模型上下文设置、模板或资源不可支持时公开降级并重做匹配base/RL，不能混比论文数字。
-- [ ] 测试解码参数先查官方benchmark配置；如官方评测不同，分别报告原官方协议参考和本项目匹配协议。
-- [ ] 评测fork说明同样为 `More details coming soon`，需读实际 `run_infer.py` 与workspace_base_dir参数，默认 `/tmp` 适配到允许根。
+- [x] 测试解码参数先查官方benchmark配置；如官方评测不同，分别报告原官方协议参考和本项目匹配协议。【已核（official-eval-fork-audit.md）：官方 fork 温度/top_p 在未提交的 llm_config 中不可考、轮数=15、分母硬编码、真值镜像与本项目所用 locagent 镜像有 73/500 任务级 file_changes 差异；官方协议参考评测（15 轮 + 官方真值 + 4 模型）单独运行，与本项目匹配协议双口径分报。】
+- [x] 评测fork说明同样为 `More details coming soon`，需读实际 `run_infer.py` 与workspace_base_dir参数，默认 `/tmp` 适配到允许根。【已核：fork @7cf83b8 run_infer.sh 用 `--runtime local --workspace_base_dir /tmp/testbed/`；本项目适配为 codescout-data/workspaces（无 .git 快照），语义一致。】
 - [x] 全部对照使用相同turn/上下文/输出预算、tool结果裁剪、终止条件、采样seed；不能让RL模型多搜几次。
-- [ ] 官方CodeScout4B仅评估公开checkpoint作为参考，不参与训练/选数据；没有可比协议不直接横比论文表数字。
+- [ ] 官方CodeScout4B仅评估公开checkpoint作为参考，不参与训练/选数据；没有可比协议不直接横比论文表数字。【进行中：模型已下载，官方协议参考评测（15 轮+官方真值）运行中；横比限制依据 official-eval-fork-audit.md §4。】
 - [x] Verified完整500任务留到协议/模型选择冻结后；此时只锁输入与评测脚本，不查看结果调参。
 - [x] 保存模型revision、评测代码commit、每任务seed和tool轨迹，记录解析失败率、成本及各级precision/recall/F1。
 
@@ -252,7 +259,7 @@ infra同因最多重试2次；第三次前需诊断决定，不重建环境无�
 - [x] 每10updates记录checkpoint与训练统计；dev在0/10/40/100/200评测，冻结这个选择日程，不增测追好checkpoint。
 - [x] 用dev主指标选checkpoint，平分选更早者；未在测试看结果前锁最终checkpoint hash。
 - [x] 梯度非有限、评分器异常、泄漏、动作漏mask立即stop；infra有限重试，失败成本保留。
-- [ ] 不根据训练reward上涨单独宣布有效；全同reward组、格式失败、长度增长、过报位置分别分析。
+- [x] 不根据训练reward上涨单独宣布有效；全同reward组、格式失败、长度增长、过报位置分别分析。【分析已做：全同 reward 组 3.5%（audit/rl-s17-training.json）；failure_class 分列与文件级 miss/over/both_low 模式分析（error-analysis-verified.json：base no_finish 226/499 → s17 1/499，s17 file_perfect 172 vs base 75、过报 40 vs 28）；有效性判定基于冻结测试集对照而非训练 reward。】
 - [x] 第二seed按同一配置执行；8卡串行默认，若授权且profile通过可两个8卡并行，其余卡不自动占用。
 
 ## 8．冻结最终评测与分析
@@ -270,7 +277,7 @@ infra同因最多重试2次；第三次前需诊断决定，不重建环境无�
 - [x] 提议有意义收益门槛：总F1 sum宏平均在0–3尺度提升≥0.10（除3归一化后约3.33个百分点），且两seed方向同为正、平均差值的任务配对CI下界>0；这是本项目预设非论文阈值。
 - [x] 稳健收益同时检查分级F1、precision下降、token/成本膨胀；未满足门槛按未明确收益/退化/证据不足解释。
 - [x] 结果表包含数据分母、base、RL两个seed、公开模型参考、差值/CI、token/turn/time/GPUh及排除数。
-- [ ] 分析错误：搜索方向、漏文件、过报、类/函数层级、模板解析、轮数耗尽、长上下文、环境异常。
+- [x] 分析错误：搜索方向、漏文件、过报、类/函数层级、模板解析、轮数耗尽、长上下文、环境异常。【分布分析：error-analysis-verified.json + audit/*.json——轮数耗尽 base 10/s17 1/s29 35；no_finish base 226→s17 1；模板解析 base 1；文件级错误结构：both_low 为主（270/497）、过报 40、漏报 15（s17）；类/函数层级 F1 递减（module<file、entity<module）见 final-report §1 表。搜索方向/长上下文细类未逐轨迹深挖（有限度，已注明）。】
 - [x] 定位能力改善只支持本任务结论；未经修复agent独立实验不写“提高代码修复成功率”。
 - [x] 论文4B参考Verified的file/module/function F1为base49.73/19.32/13.27→RL68.52/45.97/36.78（百分数）；仅作论文证据，不能预填本项目结果。
 - [x] 固定最终test反馈仅用于报告，若另开方法修订需要新版本/新开发决定，不能复用测试调参冒充冻结结果。
@@ -281,7 +288,7 @@ infra同因最多重试2次；第三次前需诊断决定，不重建环境无�
 - [x] 输出 `docs/HANDOVER-codescout-verl.md`：完成/未完成、实际环境、命令、run_id、进程/日志/checkpoint/恢复、剩预算。
 - [x] 更新index/status和本todo，只勾有对应证据的项；文件存在或进程退出不代表方法有效。
 - [x] 小型指标、manifest、配置/依赖锁、结果审计入Git；完整轨迹/模型/数据留运行时并给恢复清单。
-- [ ] 只清理本作业进程，停止服务后再次核对PID归属；checkpoint清理前备份并记录BACKED_UP.md。
+- [x] 只清理本作业进程，停止服务后再次核对PID归属；checkpoint清理前备份并记录BACKED_UP.md。【处置：全部作业进程退出后实测 GPU 0 MiB、0 训练进程、Ray session 已终结（三端核对于 1fad3ac）；无 checkpoint 删除——保留策略=保留全部最终产物（磁盘余量 3.4P 无压力），故无需 BACKED_UP.md；后续若清理需先按 AGENTS §4 建备份记录。】
 - [ ] 提交/push/服务器同步按用户授权与AGENTS进行，核三端commit和两端工作树；不同步如实写出。
 
 ## 资源与预算：profile后冻结

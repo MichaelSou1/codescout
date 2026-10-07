@@ -1,0 +1,31 @@
+{
+  "generated": "2026-10-07T03:47:55.137571+00:00",
+  "audits": {
+    "rl_s29-pro": {
+      "audit_source": "/mmu_vlm_hdd/home/rhsu/playground/codescout-data/runs/cs4b-test-rl_s29-pro/reward_audit_filtered.jsonl",
+      "num_tasks": 241,
+      "macro": {
+        "sum_f1": 0.07740565105710334,
+        "file_f1": 0.0520746887966805,
+        "module_f1": 0.01411776328788777,
+        "entity_f1": 0.011213198972535072,
+        "file_precision": 0.07676348547717843,
+        "file_recall": 0.042876901798063624,
+        "module_precision": 0.03112033195020747,
+        "entity_precision": 0.024896265560165973,
+        "num_turns": 9.377593360995851
+      },
+      "failure_class": {
+        "valid_prediction": 203,
+        "no_finish": 0,
+        "multi_finish": 0,
+        "parse_error": 0,
+        "sanity_check": 0,
+        "infra": 0
+      },
+      "exhausted_turns_masked_out": 38,
+      "turns_min": 6,
+      "turns_max": 12
+    }
+  }
+}

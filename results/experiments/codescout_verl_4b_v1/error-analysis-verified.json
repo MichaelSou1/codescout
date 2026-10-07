@@ -1,0 +1,41 @@
+{
+ "base": {
+  "failure_class": {
+   "no_finish": 226,
+   "valid": 262,
+   "exhausted": 10,
+   "parse_error": 1
+  },
+  "file_pred_modes": {
+   "file_perfect": 75,
+   "file_both_low": 148,
+   "file_miss": 11,
+   "file_over": 28
+  }
+ },
+ "rl_s17": {
+  "failure_class": {
+   "valid": 497,
+   "no_finish": 1,
+   "exhausted": 1
+  },
+  "file_pred_modes": {
+   "file_both_low": 270,
+   "file_perfect": 172,
+   "file_miss": 15,
+   "file_over": 40
+  }
+ },
+ "rl_s29": {
+  "failure_class": {
+   "valid": 464,
+   "exhausted": 35
+  },
+  "file_pred_modes": {
+   "file_perfect": 165,
+   "file_both_low": 268,
+   "file_over": 10,
+   "file_miss": 21
+  }
+ }
+}
