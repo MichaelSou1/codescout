@@ -12,9 +12,9 @@
 | cs4b-smoke-a01 | 2026-10-07 | verl trainer 最小 correctness smoke + 恢复（步骤 4/6） | **完成（PASS）** | 无前序 | [records/cs4b-smoke-a01.md](records/cs4b-smoke-a01.md) |
 | cs4b-prof-a01 | 2026-10-07 | 8×H100 代表性 profile（步骤 6） | **完成（11.7–16.8s/update）** | 无前序 | [records/cs4b-prof-a01.md](records/cs4b-prof-a01.md) |
 | cs4b-base-dev01 | 2026-10-07 | 未训练起点 dev 基线（步骤 5） | **完成（sum_F1 0.2067）** | 无前序 | [records/cs4b-base-dev01.md](records/cs4b-base-dev01.md) |
-| cs4b-rl-s17 | 2026-10-07 | 主 RL 训练 seed17，200 updates（步骤 7） | **运行中（06:12 CST 启动）** | cs4b-base-dev01 | （运行中，完成后补记录） |
-| cs4b-rl-s29 | 待启动 | 主 RL 训练 seed29（步骤 7） | 待 s17 完成/决定 | cs4b-base-dev01 | — |
-| cs4b-test-base/-s17/-s29 | 待启动 | 最终 Verified 500 评测（步骤 8） | 待模型冻结 | 互相匹配 | — |
+| cs4b-rl-s17 | 2026-10-07 | 主 RL 训练 seed17，200 updates（步骤 7） | **完成（dev 峰值 1.058@190，选中）** | cs4b-base-dev01 | [records/cs4b-rl-s17.md](records/cs4b-rl-s17.md) |
+| cs4b-rl-s29 | 2026-10-07 | 主 RL 训练 seed29，200 updates（步骤 7） | **完成（dev 峰值 0.867@200，选中）** | cs4b-base-dev01 | [records/cs4b-rl-s29.md](records/cs4b-rl-s29.md) |
+| cs4b-test-{base,s17,s29}-{verified,pro,lite} | 2026-10-07 | 最终冻结评测 ×9 + bootstrap（步骤 8） | **完成（Verified +0.486 CI[0.407,0.565] → 有效）** | 匹配对照 | [records/cs4b-test-final.md](records/cs4b-test-final.md) |
 
 ## 计划中的 run_id（登记占用，未启动）
 

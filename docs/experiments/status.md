@@ -1,34 +1,39 @@
 # 实验状态汇总
 
-更新：2026-10-07 04:55 CST。
+更新：2026-10-07 11:45 CST（**项目主链路完成**）。
 
-## 当前结论
+## 最终结论
 
-- 尚无 RL 结果。工程链路推进：环境（verl v0.9.1 官方锁定组合）验收 PASS；数据/划分/workspace 构造 oracle 数据面通过；verl 适配实现进行中。
+- **研究决定：有效（Verified 主指标全部门槛通过）**——未训练 base 0.262 → RL 两 seed 0.762/0.733，
+  平均差值 **+0.486，任务配对 bootstrap 95% CI [0.407, 0.565]**；两 seed 同向正、增益远超 +0.10 门槛。
+- Lite 泛化 +0.372（门槛通过）；Pro +0.049（统计显著为正但未达 +0.10 幅度门槛，如实分列）。
+- 详见 [final-report](../reproduction/final-report.md) 与 [records/cs4b-test-final.md](records/cs4b-test-final.md)。
 
-## 已完成（工程验收，非方法有效）
+## 已完成（全部有证据入 Git）
 
-- 环境：Python 3.12.15 prefix，torch 2.11.0+cu130 / vllm 0.24.0 / transformers 5.9.0 / flash-attn 2.8.3 / verl 0.9.1，路径合规无越界（cs4b-env-a01）。
-- 数据：模型@cdbee75f + 4 数据集固定 revision 下载；划分 39,187 train + 100 dev（无重叠）；私有标签隔离（cs4b-oracle-a01）。
-- Workspace：20/20 任务真实克隆+mutation 快照，无 `.git`，无泄漏。
-- 奖励合同：15 测试冻结原 scorer 语义（tests/test_reward_contract.py）。
+步骤 0–8 全流程：协议冻结、verl v0.9.1 环境验收 PASS、数据/划分/重叠审计（零污染）、
+workspace 20/20、奖励合同 15 tests、适配全套、损失/梯度数值对齐 10/10、correctness smoke+恢复、
+8 卡 profile、未训练基线、两 seed 200-update 主训练、dev checkpoint 选择（s17@190、s29@200）、
+9 个最终评测 + bootstrap。
 
 ## 活动作业
 
-- 步骤 4 适配实现（子代理，src/verl_adapter + configs + run 脚本 + 对齐测试）。
-- 无 GPU 作业、无训练进程。
+- 无。全部 GPU 作业完成并干净退出（GPU 0 MiB、无残留进程）。
 
 ## 阻塞
 
-- 步骤 5–8（基线/训练/评测）依赖：适配验收（固定张量对齐、finish 语义 A-2、轮数耗尽 A-1）、GPU 短测，以及**训练执行额度与预算冻结**（用户当次授权）。
+- 无主链路阻塞。开放项见 final-report §3/§6（prompt turns 文本、官方 fork 参数核对、
+  ACL 隔离强度、audit_trajectory 独立脚本等）。
 
 ## 预算
 
-- 已消耗 GPUh：0（未启动任何 GPU 作业）。
-- 服务器 CPU 墙钟约 1.5 小时（安装/下载/克隆）。
+- 总消耗 ≈ **58.5 GPUh**（上限 80 内）：环境/短测/smoke/profile 2.5、基线 1.6、
+  主训练 2×16.6、dev 评测 ~10.5、最终评测 ~14（含等待/失败/初始化）。
+- infra 失败均有限重试并入账（环境 7 次、评测瞬态 2 次、审计 bug 1 次）。
 
-## 下一步
+## 下一步（可选）
 
-1. 适配实现完成后：服务器跑 reward 对齐（≤1e-8）、prompt 编码一致性、单任务全链路 smoke。
-2. GPU 短测（模型加载+短生成+FSDP init，独立 run 记预算）。
-3. 之后的训练启动需用户冻结执行额度（200 updates × 2 seeds 的 GPUh 预算）。
+1. 官方评测 fork 参数核对 + CodeScout-4B 参考模型评测（可比性受限）。
+2. 逐 token mask 审计与 prompt clip 口径审计（profile 遗留）。
+3. 异步 trainer 迁移（对齐原 fully-async 协议需重做匹配基线）。
+4. Pro 提升不足的归因分析。

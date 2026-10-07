@@ -4,7 +4,10 @@
 
 ## 1. 一句话现状
 
-协议 v1 冻结后的 verl 迁移已完成工程验收全链路（环境/数据/workspace/奖励合同/损失梯度对齐/smoke/恢复/profile/未训练基线），主训练 seed17（200 updates）正在 8×H100 上运行；seed29 与最终 Verified 评测待 s17 完成后依次执行。
+**主链路已完成**：Verified 500 主结果 base 0.262 → RL 两 seed 0.762/0.733，平均差值 +0.486
+（任务配对 bootstrap 95% CI [0.407, 0.565]），预设门槛全过 → 研究决定"有效"。全部 GPU 作业
+已结束并清理（GPU 0 MiB、无残留进程）。完整结果：[final-report](reproduction/final-report.md)、
+[status](experiments/status.md)；总成本 ≈58.5 GPUh。
 
 ## 2. 已完成（全部有证据、已入 Git）
 

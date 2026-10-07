@@ -1,0 +1,54 @@
+{
+  "n_boot": 10000,
+  "bootstrap_seed": 20261007,
+  "macro": {
+    "rl_s17": {
+      "n_tasks": 300,
+      "mean_diff": 0.4234,
+      "ci95": [
+        0.3282,
+        0.5212
+      ],
+      "repo_cluster": {
+        "n_repos": 12,
+        "mean_diff": 0.4234,
+        "ci95": [
+          0.285,
+          0.8267
+        ],
+        "note": "repo-cluster bootstrap; few repos → wide CI is expected"
+      }
+    },
+    "rl_s29": {
+      "n_tasks": 300,
+      "mean_diff": 0.3201,
+      "ci95": [
+        0.2242,
+        0.4184
+      ],
+      "repo_cluster": {
+        "n_repos": 12,
+        "mean_diff": 0.3201,
+        "ci95": [
+          0.147,
+          0.4335
+        ],
+        "note": "repo-cluster bootstrap; few repos → wide CI is expected"
+      }
+    },
+    "avg_seeds": {
+      "n_tasks": 300,
+      "mean_diff": 0.3718,
+      "ci95": [
+        0.2885,
+        0.4593
+      ]
+    }
+  },
+  "threshold": {
+    "sum_f1_gain": 0.1,
+    "both_seeds_positive": true,
+    "avg_ci_lower_gt_0": true,
+    "gain_ge_0.10": true
+  }
+}

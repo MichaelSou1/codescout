@@ -1,0 +1,27 @@
+{
+ "train_dev_id_overlap": [],
+ "train_verified_id_overlap": 0,
+ "train_verified_repo_overlap": {
+  "common": [],
+  "train_repos": 131,
+  "verified_repos": 12
+ },
+ "train_pro_id_overlap": 0,
+ "train_pro_repo_overlap": {
+  "common": [],
+  "train_repos": 131,
+  "pro_repos": 3
+ },
+ "train_lite_id_overlap": 0,
+ "train_lite_repo_overlap": {
+  "common": [],
+  "train_repos": 131,
+  "lite_repos": 12
+ },
+ "train_verified_issue_text_sha_overlap": 0,
+ "train_pro_issue_text_sha_overlap": 0,
+ "train_lite_issue_text_sha_overlap": 0,
+ "verified_dev_id_overlap": 0,
+ "pro_dev_id_overlap": 0,
+ "lite_dev_id_overlap": 0
+}
