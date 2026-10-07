@@ -8,6 +8,9 @@
   平均差值 **+0.486，任务配对 bootstrap 95% CI [0.407, 0.565]**；两 seed 同向正、增益远超 +0.10 门槛。
 - Lite 泛化 +0.372（门槛通过）；Pro +0.049（统计显著为正但未达 +0.10 幅度门槛，如实分列）。
 - 详见 [final-report](../reproduction/final-report.md) 与 [records/cs4b-test-final.md](records/cs4b-test-final.md)。
+- **官方协议参考（15 轮+官方真值）**：本项目复现在同管线下全面达到并略超官方 CodeScout-4B
+  （Verified 0.815/0.783 vs 0.730；Lite 0.636/0.552 vs 0.497；Pro 0.084/0.078 vs 0.070）——
+  SkyRL→verl 迁移质量的独立佐证（口径差异见 official-eval-fork-audit.md，不横比论文表）。
 
 ## 已完成（全部有证据入 Git）
 

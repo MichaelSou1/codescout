@@ -15,6 +15,7 @@
 | cs4b-rl-s17 | 2026-10-07 | 主 RL 训练 seed17，200 updates（步骤 7） | **完成（dev 峰值 1.058@190，选中）** | cs4b-base-dev01 | [records/cs4b-rl-s17.md](records/cs4b-rl-s17.md) |
 | cs4b-rl-s29 | 2026-10-07 | 主 RL 训练 seed29，200 updates（步骤 7） | **完成（dev 峰值 0.867@200，选中）** | cs4b-base-dev01 | [records/cs4b-rl-s29.md](records/cs4b-rl-s29.md) |
 | cs4b-test-{base,s17,s29}-{verified,pro,lite} | 2026-10-07 | 最终冻结评测 ×9 + bootstrap（步骤 8） | **完成（Verified +0.486 CI[0.407,0.565] → 有效）** | 匹配对照 | [records/cs4b-test-final.md](records/cs4b-test-final.md) |
+| cs4b-offref-{4模型}-{verified,lite,pro} | 2026-10-07 | 官方协议参考评测 ×12（15 轮+官方真值，含官方 CodeScout-4B） | **完成（复现 ≥官方模型：Verified 0.815/0.783 vs 0.730）** | 同管线互比 | [records/cs4b-offref-final.md](records/cs4b-offref-final.md) |
 
 ## 计划中的 run_id（登记占用，未启动）
 

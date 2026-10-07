@@ -1,0 +1,24 @@
+{
+  "num_audit_lines": 300,
+  "num_tasks": 300,
+  "duplicate_instance_warning": {},
+  "macro": {
+    "sum_f1": 0.21944444444444444,
+    "file_f1": 0.1877777777777778,
+    "module_f1": 0.024444444444444442,
+    "entity_f1": 0.007222222222222222,
+    "file_precision": 0.17777777777777778,
+    "file_recall": 0.21,
+    "module_precision": 0.021666666666666667,
+    "module_recall": 0.03,
+    "entity_precision": 0.006666666666666667,
+    "entity_recall": 0.008333333333333333,
+    "num_turns": 5.586666666666667
+  },
+  "failure_class_counts": {
+    "no_finish": 132,
+    "null": 168
+  },
+  "valid_prediction_tasks": 168,
+  "note": "score range 0-3 (file+module+entity F1, weights 1/1/1); infra rows listed separately"
+}

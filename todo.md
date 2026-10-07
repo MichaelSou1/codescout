@@ -218,7 +218,7 @@ infra同因最多重试2次；第三次前需诊断决定，不重建环境无�
 - [x] 测试解码参数先查官方benchmark配置；如官方评测不同，分别报告原官方协议参考和本项目匹配协议。【已核（official-eval-fork-audit.md）：官方 fork 温度/top_p 在未提交的 llm_config 中不可考、轮数=15、分母硬编码、真值镜像与本项目所用 locagent 镜像有 73/500 任务级 file_changes 差异；官方协议参考评测（15 轮 + 官方真值 + 4 模型）单独运行，与本项目匹配协议双口径分报。】
 - [x] 评测fork说明同样为 `More details coming soon`，需读实际 `run_infer.py` 与workspace_base_dir参数，默认 `/tmp` 适配到允许根。【已核：fork @7cf83b8 run_infer.sh 用 `--runtime local --workspace_base_dir /tmp/testbed/`；本项目适配为 codescout-data/workspaces（无 .git 快照），语义一致。】
 - [x] 全部对照使用相同turn/上下文/输出预算、tool结果裁剪、终止条件、采样seed；不能让RL模型多搜几次。
-- [ ] 官方CodeScout4B仅评估公开checkpoint作为参考，不参与训练/选数据；没有可比协议不直接横比论文表数字。【进行中：模型已下载，官方协议参考评测（15 轮+官方真值）运行中；横比限制依据 official-eval-fork-audit.md §4。】
+- [x] 官方CodeScout4B仅评估公开checkpoint作为参考，不参与训练/选数据；没有可比协议不直接横比论文表数字。【完成：官方协议参考口径（15 轮+官方 code-search 真值，official-eval-fork-audit.md）下四模型同管线互比——Verified 0.268/0.815/0.783/0.730（base/s17/s29/官方CodeScout-4B）、Lite 0.219/0.636/0.552/0.497、Pro 0.039/0.084/0.078/0.070；本项目复现全面达到并略超官方发布模型；因真值镜像差异（73/500）与官方温度不可考，不与论文表数字直接横比。】
 - [x] Verified完整500任务留到协议/模型选择冻结后；此时只锁输入与评测脚本，不查看结果调参。
 - [x] 保存模型revision、评测代码commit、每任务seed和tool轨迹，记录解析失败率、成本及各级precision/recall/F1。
 
